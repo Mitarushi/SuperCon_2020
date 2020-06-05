@@ -29,7 +29,6 @@ void nap_count(int i, int alphabet) {
 // ダブリングで構築 アルファベットごとに
 vector<pair<char, string>> get_insert(int al) {
     vector<pair<char, string>> ans;
-    char previous = al + 'a';
     while (1) {
         bool zero = true;
         bool one = true;
@@ -37,7 +36,7 @@ vector<pair<char, string>> get_insert(int al) {
         string string_to = "";
         for (int i = 0; i < 26; i++) {
             if (coun[al][i] % 2 == 1) {
-                string_to += i + 'A';
+                string_to += i + 'a';
             }
             if (coun[al][i] > 0) {
                 zero = false;
@@ -52,12 +51,11 @@ vector<pair<char, string>> get_insert(int al) {
         }
         if (zero) {
             if (s_count[al] > 0) {
-                ans.push_back(make_pair(previous, ""));
+                ans.push_back(make_pair(al + 'A', ""));
             }
             return ans;
         } else {
-            ans.push_back(make_pair(previous, string_to));
-            previous = al + 'A';
+            ans.push_back(make_pair(al + 'A', string_to));
             if (one) {
                 return ans;
             }
@@ -98,16 +96,16 @@ int main() {
     }
     cout << "YES" << endl;
 
-    // 小文字->大文字にして代入
+    // 小文字を大文字に変換
+    for (int i = 0; i < 26; i++) {
+        if (t_count[i] > 0) {
+            printf("1 %c%c\n", i + 'a', i + 'A');
+        }
+    }
+    // 大文字->小文字にして代入
     for (int i = 0; i < 26; i++) {
         for (auto j : get_insert(i)) {
             printf("1 %c%s\n", j.first, j.second.c_str());
-        }
-    }
-    // 大文字を小文字に変換
-    for (int i = 0; i < 26; i++) {
-        if (t_count[i]>0){
-            printf("1 %c%c\n", i + 'A', i + 'a');
         }
     }
 }
