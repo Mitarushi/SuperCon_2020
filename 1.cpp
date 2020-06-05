@@ -65,19 +65,6 @@ vector<pair<char, string>> get_insert(int al) {
     }
 }
 
-// カルダノの代入
-string substitute(string s, char x, string v) {
-    string ns = "";
-    for (int i = 0; i < s.length(); i++) {
-        if (s[i] == x) {
-            ns += v;
-        } else {
-            ns += s[i];
-        }
-    }
-    return ns;
-}
-
 int main() {
     cin >> s >> t;
 
@@ -111,22 +98,16 @@ int main() {
     }
     cout << "YES" << endl;
 
-    string s_change = s;
-
     // 小文字->大文字にして代入
     for (int i = 0; i < 26; i++) {
         for (auto j : get_insert(i)) {
             printf("1 %c%s\n", j.first, j.second.c_str());
-            s_change = substitute(s_change, j.first, j.second);
         }
     }
     // 大文字を小文字に変換
     for (int i = 0; i < 26; i++) {
-        if (t_count[i] > 0) {
+        if (t_count[i]>0){
             printf("1 %c%c\n", i + 'A', i + 'a');
-            s_change = substitute(s_change, i + 'A', string({(char)(i + 'a')}));
         }
     }
-
-    cout << s_change << endl;
 }
