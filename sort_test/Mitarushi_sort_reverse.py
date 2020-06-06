@@ -75,7 +75,8 @@ def test(s):
 
 
 if __name__ == "__main__":
-    s = generate_random(100)
+    #s = generate_random(100)
+    s = [4, 3, 5, 2, 1]
     print(sorted(s))
     print(swap_sort(s[:]))
     print(get_reverse_count(s))
