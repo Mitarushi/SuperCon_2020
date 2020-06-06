@@ -27,7 +27,32 @@ def swap_sort(s):
             # print(j, i)
             s[j], s[i] = s[i], s[j]
             is_sorted[j] = True
-    return s, cost
+    return cost
+
+
+def quick_sort(s, l=0, r=-1):
+    if r == -1:
+        r = len(s) - 1
+
+    cost = 0
+    if l < r:
+        i, j = l, r
+        pivot = s[randint(l, r)]
+        while True:
+            while s[i] < pivot:
+                i += 1
+            while s[j] > pivot:
+                j -= 1
+            if i >= j:
+                break
+            if s[i] != s[j]:
+                cost += abs(j - i)
+                s[i], s[j] = s[j], s[i]
+            i += 1
+            j -= 1
+        cost += quick_sort(s, l, i - 1)
+        cost += quick_sort(s, j + 1, r)
+    return cost
 
 
 class BIT:
@@ -64,20 +89,10 @@ def get_reverse_count(s):
     return count
 
 
-def test(s):
-    count = 0
-    for _ in range(len(s)):
-        for i in range(len(s) - 1):
-            if s[i] > s[i + 1]:
-                s[i], s[i + 1] = s[i + 1], s[i]
-                count += 1
-    return count
-
-
 if __name__ == "__main__":
-    #s = generate_random(100)
-    s = [4, 3, 5, 2, 1]
+    s = generate_random(100)
+    #s = [4, 3, 5, 2, 1]
     print(sorted(s))
     print(swap_sort(s[:]))
+    print(quick_sort(s[:]))
     print(get_reverse_count(s))
-    print(test(s[:]))

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     for _ in trange(TRY):
         n = randint(MIN_LENGTH, MAX_LENGTH)
         s = generate_random(n)
-        result_sort.append(swap_sort(s[:])[1])
+        result_sort.append(quick_sort(s[:]))
         result_reverse.append(get_reverse_count(s))
 
     plt.figure(figsize=(12, 6))
@@ -24,4 +24,4 @@ if __name__ == "__main__":
     plt.ylim(0, 300000)
     plt.axes().set_aspect("equal", "datalim")
     plt.scatter(result_sort, result_reverse, s=2)
-    plt.savefig("sort_test\\result.png")
+    plt.savefig("sort_test\\result_quick.png")
