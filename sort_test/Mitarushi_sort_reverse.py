@@ -165,6 +165,7 @@ def simple_sort_cost2(s):
     return cost // 26
 
 
+# sはランダムだと仮定するとうまくいく 25.5-iを文字の分布によって変えると正確になるかも
 def simple_sort_cost3(s):
     cost = 0
     for ind, i in enumerate(s):
