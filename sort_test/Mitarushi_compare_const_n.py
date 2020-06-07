@@ -3,8 +3,9 @@ from random import randint
 import matplotlib.pyplot as plt
 from tqdm import trange
 
-MAX_LENGTH = 4000
-MIN_LENGTH = 10
+LENGTH = 4000
+FLIP_MAX = 4000
+FLIP_MIN = 3
 TRY = 10000
 sorts = [("Bucket Sort", swap_sort, "blue"),
          ("Quick Sort", quick_sort, "green"),
@@ -13,7 +14,6 @@ sorts = [("Bucket Sort", swap_sort, "blue"),
          ("Heap Sort", heap_sort, "magenta"),
          ("Simple Cost", simple_sort_cost, "orange")]
 reverse_imfo = ("Inversion Number", get_reverse_count, "yellow")
-half_sort = True
 
 
 if __name__ == "__main__":
@@ -22,10 +22,9 @@ if __name__ == "__main__":
     result_reverse = []
 
     for _ in trange(TRY):
-        n = randint(MIN_LENGTH, MAX_LENGTH)
+        n = LENGTH
         s = generate_random(n)
-        if half_sort:
-            half_sorted(s, max(2, n//2))
+        half_sorted(s, randint(FLIP_MIN, FLIP_MAX))
 
         result_n.append(n)
         result_reverse.append(get_reverse_count(s))
@@ -37,13 +36,13 @@ if __name__ == "__main__":
     ax1 = plt.subplot2grid((2, 7), (0, 0), 2, 3)
     ax2 = plt.subplot2grid((2, 7), (0, 4), 2, 3)
 
-    ax1.set_xlabel("Length")
+    ax1.set_xlabel("Simple Cost")
     ax1.set_ylabel("Sort Cost")
-    ax1.set_xlim(0, MAX_LENGTH)
+    ax1.set_xlim(0, 4000000)
     ax1.set_ylim(0, 16000000)
     ax1.grid()
-    for i, (name, _, color) in enumerate(sorts):
-        ax1.scatter(result_n, result_sort[i], label=name, c=color, s=1)
+    for i, (name, _, color) in enumerate(sorts[:-1]):
+        ax1.scatter(result_sort[-1], result_sort[i], label=name, c=color, s=1)
     ax1.scatter(result_n, result_reverse,
                 label=reverse_imfo[0], c=reverse_imfo[2], s=1)
     ax1.legend()
@@ -58,7 +57,4 @@ if __name__ == "__main__":
         ax2.scatter(result_reverse, result_sort[i], label=name, c=color, s=1)
     ax2.legend()
 
-    if half_sort:
-        plt.savefig("sort_test\\result_all_half.png")
-    else:
-        plt.savefig("sort_test\\result_all.png")
+    plt.savefig("sort_test\\result_const_n.png")

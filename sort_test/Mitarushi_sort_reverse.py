@@ -129,6 +129,32 @@ def heap_sort(s):
     return cost
 
 
+def half_sorted(s, k):
+    h = len(s) * 10 // 13
+    while True:
+        for i in range(len(s) - h):
+            if s[i] > s[i + h]:
+                s[i], s[i + h] = s[i + h], s[i]
+        if h <= k:
+            return
+        h = max(1, h * 10 // 13)
+
+
+def simple_sort_cost(s):
+    count_char = [0] * 26
+    for i in s:
+        count_char[i] += 1
+
+    char_from = [0]
+    for i in count_char:
+        char_from.append(char_from[-1] + i)
+
+    cost = 0
+    for ind, i in enumerate(s):
+        cost += abs(ind - char_from[i])
+    return cost
+
+
 class BIT:
     def __init__(self, a, func=int.__add__, one=0):
         self.n = len(a)
