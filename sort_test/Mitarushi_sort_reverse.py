@@ -135,9 +135,12 @@ def half_sorted(s, k):
         for i in range(len(s) - h):
             if s[i] > s[i + h]:
                 s[i], s[i + h] = s[i + h], s[i]
-        if h <= k:
-            return
+                k -= 1
+                if k <= 0:
+                    return
         h = max(1, h * 10 // 13)
+        if h == 1:
+            return
 
 
 def simple_sort_cost(s):
@@ -153,6 +156,13 @@ def simple_sort_cost(s):
     for ind, i in enumerate(s):
         cost += abs(ind - char_from[i])
     return cost
+
+
+def simple_sort_cost2(s):
+    cost = 0
+    for ind, i in enumerate(s):
+        cost += (26 - i) * ind
+    return cost // 26
 
 
 class BIT:
@@ -198,4 +208,5 @@ if __name__ == "__main__":
     print("comb", comb_sort(s[:]))
     print("shell", shell_sort(s[:]))
     print("heap", heap_sort(s[:]))
+    print("simple cost2", simple_sort_cost2(s[:]))
     print(get_reverse_count(s))

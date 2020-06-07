@@ -5,15 +5,16 @@ from tqdm import trange
 
 MAX_LENGTH = 4000
 MIN_LENGTH = 10
-TRY = 10000
+TRY = 1000
 sorts = [("Bucket Sort", swap_sort, "blue"),
          ("Quick Sort", quick_sort, "green"),
          ("Comb Sort", comb_sort, "red"),
          ("Shell Sort", shell_sort, "cyan"),
          ("Heap Sort", heap_sort, "magenta"),
-         ("Simple Cost", simple_sort_cost, "orange")]
+         ("Simple Cost", simple_sort_cost, "orange"),
+         ("Simple Cost2", simple_sort_cost2, "brown")]
 reverse_imfo = ("Inversion Number", get_reverse_count, "yellow")
-half_sort = True
+half_sort = False
 
 
 if __name__ == "__main__":
@@ -25,7 +26,7 @@ if __name__ == "__main__":
         n = randint(MIN_LENGTH, MAX_LENGTH)
         s = generate_random(n)
         if half_sort:
-            half_sorted(s, max(2, n//2))
+            half_sorted(s, max(1, n // 3))
 
         result_n.append(n)
         result_reverse.append(get_reverse_count(s))
