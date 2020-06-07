@@ -165,6 +165,16 @@ def simple_sort_cost2(s):
     return cost // 26
 
 
+def simple_sort_cost3(s):
+    cost = 0
+    for ind, i in enumerate(s):
+        cost += (26 - i) * ind
+    s.sort()
+    for ind, i in enumerate(s):
+        cost -= (26 - i) * ind
+    return cost
+
+
 class BIT:
     def __init__(self, a, func=int.__add__, one=0):
         self.n = len(a)
