@@ -1,4 +1,4 @@
-from Mitarushi_sort_reverse import *
+from Mitarushi_sort_func import *
 from random import randint
 import matplotlib.pyplot as plt
 from tqdm import trange
