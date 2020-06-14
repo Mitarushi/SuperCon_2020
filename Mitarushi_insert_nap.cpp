@@ -113,7 +113,7 @@ int main() {
 
     // 小文字を大文字に変換
     for (int i = 0; i < 26; i++) {
-        if (t_count[i] > 0) {
+        if (s_count[i] > 0) {
             printf("1 %c%c\n", i + 'a', i + 'A');
             s_change = substitute(s_change, i + 'a', string({(char)(i + 'A')}));
         }
