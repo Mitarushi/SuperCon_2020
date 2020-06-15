@@ -426,7 +426,7 @@ int main() {
         // int index_len = char_index.size();
 
         //ここの回数、調整の余地あり
-        for (int j = 0; j < s_length * 30; j++) {
+        for (int j = 0; j < s_length * 20; j++) {
             // int a = char_index[mt() % index_len], b = mt() % s_length;
             // int a = mt() % s_length, b = mt() % s_length;
             int a = xor128() % s_length, b = xor128() % s_length;
