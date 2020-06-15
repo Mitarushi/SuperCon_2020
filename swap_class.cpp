@@ -75,7 +75,7 @@ class BIT {
     }
 
     // [i,j)の和
-    T section(int i, int j) { return sum(j) - sum(i); }
+    T section(int i, int j) { return sum(j - 1) - sum(i - 1); }
 };
 
 class swap_calc {
@@ -202,6 +202,7 @@ class swap_calc {
 };
 
 //テスト
+/*
 int main() {
     string s = "abcde", t = "aahhiiiimmrrssttuu";
     min_cost = simple_cost(t);  // ココ大切
@@ -240,3 +241,4 @@ int main() {
                test.cost_estimate, test.swap_cost);
     }
 }
+*/
