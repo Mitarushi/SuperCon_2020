@@ -26,7 +26,7 @@ int main() {
     for (int i = 0; i < insert.size(); i++) {
         test.init_BIT();
         int s_length = test.s.size();
-        for (int j = 0; j < 1000; j++) {
+        for (int j = 0; j < 10000; j++) {
             int a = mt() % s_length, b = mt() % s_length;
             if (a != b) test.swap_string(min(a, b), max(a, b));
         }
