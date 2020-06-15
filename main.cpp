@@ -346,6 +346,20 @@ ll quicksort(string a, int left, int right) {
     return cost;
 }
 
+//乱数
+unsigned int seed[4];
+void init_xor128(unsigned int s) {
+    for (unsigned int i = 0; i < 4; ++i)
+        seed[i] = s = 1812433253U * (s ^ (s >> 30)) + i;
+}
+unsigned int xor128() {
+    unsigned int t = (seed[0] ^ (seed[0] << 11));
+    seed[0] = seed[1];
+    seed[1] = seed[2];
+    seed[2] = seed[3];
+    return (seed[3] = (seed[3] ^ (seed[3] >> 19)) ^ (t ^ (t >> 8)));
+}
+
 int main() {
     cin >> s >> t;
 
@@ -401,7 +415,9 @@ int main() {
 
     auto swap_cost_calc = swap_calc(s, insert);
     random_device rnd;
-    mt19937 mt(rnd());
+    // mt19937 mt(rnd());
+    init_xor128(rnd());
+
     for (int i = 0; i < insert.size(); i++) {
         swap_cost_calc.init_BIT();
         int s_length = swap_cost_calc.s.size();
@@ -412,7 +428,8 @@ int main() {
         //ここの回数、調整の余地あり
         for (int j = 0; j < s_length * 30; j++) {
             // int a = char_index[mt() % index_len], b = mt() % s_length;
-            int a = mt() % s_length, b = mt() % s_length;
+            // int a = mt() % s_length, b = mt() % s_length;
+            int a = xor128() % s_length, b = xor128() % s_length;
             if (a > b) swap(a, b);
             if (a == b) continue;
             auto diff = swap_cost_calc.swap_diff(a, b);
