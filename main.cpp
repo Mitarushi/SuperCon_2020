@@ -333,7 +333,7 @@ ll quicksort(string a, int left, int right) {
                 cost += abs(j - i);
 
                 char tmp_s[100];
-                sprintf(tmp_s, "2 %d %d\n", i, j);
+                sprintf(tmp_s, "2 %d %d\n", i + 1, j + 1);
                 answer += tmp_s;
                 steps++;
             }
@@ -420,7 +420,7 @@ int main() {
                 swap_cost_calc.swap_string(a, b, diff.second);
 
                 char tmp_s[100];
-                sprintf(tmp_s, "2 %d %d\n", a, b);
+                sprintf(tmp_s, "2 %d %d\n", a + 1, b + 1);
                 answer += tmp_s;
                 steps++;
             }
