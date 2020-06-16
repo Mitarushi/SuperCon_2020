@@ -19,7 +19,6 @@ string s, t;
 int s_count[26]{}, t_count[26]{};
 int dp[27][MAX_T + 1];
 int coun[26][26]{};
-int dp_letter_cost[26];
 
 string answer = "";
 int steps = 0;
@@ -33,7 +32,7 @@ void fill_dp(int alphabet) {
             dp[i + 1][j] = dp[i][j];
             if (j - s_count[i] >= 0) {
                 dp[i + 1][j] = min(dp[i + 1][j], dp[i + 1][j - s_count[i]] +
-                                                     dp_letter_cost[i]);
+                                                     abs(i - alphabet) + 1);
             }
         }
     }
@@ -43,10 +42,8 @@ void fill_dp(int alphabet) {
 void nap_count(int i, int alphabet) {
     for (int j = 25; j >= 0; j--) {
         while (1) {
-            if (i < s_count[j] ||
-                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + dp_letter_cost[j]) {
-                // コスとの更新
-                dp_letter_cost[j] += coun[j][alphabet];
+            if (i < s_count[j] || dp[j + 1][i] != dp[j + 1][i - s_count[j]] +
+                                                      abs(j - alphabet) + 1) {
                 break;
             } else {
                 i -= s_count[j];
