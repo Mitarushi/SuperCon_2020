@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <random>
+// #include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,21 +16,23 @@ const int MAX_DP = 1e9;
 
 string s, t;
 int s_count[26]{}, t_count[26]{};
-int dp[27][MAX_T + 1];
+int dp[331][MAX_T + 2];
 int coun[26][26]{};
+vector<int> order, value;
 
 string answer = "";
 int steps = 0;
 
 // ナップザックの復元
 void nap_count(int i, int alphabet) {
+    int now = value.size();
     for (int j = 25; j >= 0; j--) {
-        while (1) {
-            if (i < s_count[j] ||
-                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + 1) {
-                break;
-            } else {
-                i -= s_count[j];
+        for (int k = 0; k < order[j]; k++) {
+            now--;
+            if (i >= value[now] * s_count[j] &&
+                dp[now + 1][i] ==
+                    dp[now][i - value[now] * s_count[j]] + value[now]) {
+                i -= value[now] * s_count[j];
                 coun[j][alphabet]++;
             }
         }
@@ -72,6 +74,39 @@ vector<pair<char, string>> get_insert(int al) {
             }
         }
     }
+}
+
+//二進法ナップザック
+int check(int m) {
+    fill(dp[0], dp[330], MAX_DP);
+    dp[0][0] = 0;
+    order.clear();
+    value.clear();
+    int now = 0;
+    for (int i = 0; i < 26; i++) {
+        int bnd = min(m, (s_count[i] == 0 ? 0 : MAX_T / s_count[i]));
+        int c = 0;
+        for (int k = 1; bnd > 0; k <<= 1) {
+            c++;
+            int mul = min(k, bnd);
+            value.push_back(mul);
+            for (int j = 0; j <= MAX_T; j++) {
+                dp[now + 1][j] = dp[now][j];
+                if (j - mul * s_count[i] >= 0)
+                    dp[now + 1][j] = min(dp[now + 1][j],
+                                         dp[now][j - mul * s_count[i]] + mul);
+            }
+            bnd -= mul;
+            now++;
+        }
+        order.push_back(c);
+    }
+    for (int i = 0; i < 26; i++) {
+        if (dp[now][t_count[i]] == MAX_DP) {
+            return -1;
+        }
+    }
+    return 0;
 }
 
 ll min_cost;  // tのコスト
@@ -346,19 +381,19 @@ ll quicksort(string a, int left, int right) {
     return cost;
 }
 
-//乱数
-unsigned int seed[4];
-void init_xor128(unsigned int s) {
-    for (unsigned int i = 0; i < 4; ++i)
-        seed[i] = s = 1812433253U * (s ^ (s >> 30)) + i;
-}
-unsigned int xor128() {
-    unsigned int t = (seed[0] ^ (seed[0] << 11));
-    seed[0] = seed[1];
-    seed[1] = seed[2];
-    seed[2] = seed[3];
-    return (seed[3] = (seed[3] ^ (seed[3] >> 19)) ^ (t ^ (t >> 8)));
-}
+// //乱数
+// unsigned int seed[4];
+// void init_xor128(unsigned int s) {
+//     for (unsigned int i = 0; i < 4; ++i)
+//         seed[i] = s = 1812433253U * (s ^ (s >> 30)) + i;
+// }
+// unsigned int xor128() {
+//     unsigned int t = (seed[0] ^ (seed[0] << 11));
+//     seed[0] = seed[1];
+//     seed[1] = seed[2];
+//     seed[2] = seed[3];
+//     return (seed[3] = (seed[3] ^ (seed[3] >> 19)) ^ (t ^ (t >> 8)));
+// }
 
 int main() {
     cin >> s >> t;
@@ -374,27 +409,24 @@ int main() {
         t_count[i - 'a']++;
     }
 
-    // 和が最小となるDP
-    fill(dp[0], dp[27], MAX_DP);
-    dp[0][0] = 0;
+    // にぶたん
+    ll l = 0, r = 200001;
+    while (r - l > 1) {
+        int m = (l + r) / 2;
+        int now = check(m);
+        if (now == 0)
+            r = m;
+        else
+            l = m;
+    }
+    if (r == 200001) {
+        cout << "NO" << endl;
+        return 0;
+    }
     for (int i = 0; i < 26; i++) {
-        for (int j = 0; j <= MAX_T; j++) {
-            dp[i + 1][j] = dp[i][j];
-            if (j - s_count[i] >= 0) {
-                dp[i + 1][j] = min(dp[i + 1][j], dp[i + 1][j - s_count[i]] + 1);
-            }
-        }
+        nap_count(t_count[i], i);
     }
 
-    // 全てで復元可能かチャック
-    for (int i = 0; i < 26; i++) {
-        if (dp[26][t_count[i]] == MAX_DP) {
-            cout << "NO" << endl;
-            return 0;
-        } else {
-            nap_count(t_count[i], i);
-        }
-    }
     cout << "YES" << endl;
 
     vector<pair<char, string>> insert;
@@ -406,7 +438,6 @@ int main() {
             insert.emplace_back(make_pair(i + 'a', tmp));
         }
     }
-    // 大文字->小文字にして代入
     for (int i = 0; i < 26; i++) {
         for (auto j : get_insert(i)) {
             insert.emplace_back(j);
@@ -414,9 +445,9 @@ int main() {
     }
 
     auto swap_cost_calc = swap_calc(s, insert);
-    random_device rnd;
-    // mt19937 mt(rnd());
-    init_xor128(rnd());
+    // random_device rnd;
+    // // mt19937 mt(rnd());
+    // init_xor128(rnd());
 
     for (int i = 0; i < insert.size(); i++) {
         swap_cost_calc.init_BIT();
@@ -425,22 +456,23 @@ int main() {
         // auto char_index = swap_cost_calc.insert_char_index();
         // int index_len = char_index.size();
 
-        //ここの回数、調整の余地あり
-        for (int j = 0; j < s_length * 20; j++) {
-            // int a = char_index[mt() % index_len], b = mt() % s_length;
-            // int a = mt() % s_length, b = mt() % s_length;
-            int a = xor128() % s_length, b = xor128() % s_length;
-            if (a > b) swap(a, b);
-            if (a == b) continue;
-            auto diff = swap_cost_calc.swap_diff(a, b);
-            if (diff.first < 0) {
-                swap_cost_calc.swap_string(a, b, diff.second);
+        //ここの回数、調整の余地あり コムソートベースにした
+        int h = s_length * 10 / 15;
+        for (int j = 0; j < 25; j++) {
+            for (int a = 0; a < s_length - h; a++) {
+                int b = a + h;
+                auto diff = swap_cost_calc.swap_diff(a, b);
+                if (diff.first < 0) {
+                    swap_cost_calc.swap_string(a, b, diff.second);
 
-                char tmp_s[100];
-                sprintf(tmp_s, "2 %d %d\n", a + 1, b + 1);
-                answer += tmp_s;
-                steps++;
+                    char tmp_s[100];
+                    sprintf(tmp_s, "2 %d %d\n", a + 1, b + 1);
+                    answer += tmp_s;
+                    steps++;
+                }
             }
+
+            if (h != 1) h = h * 10 / 15;
         }
         swap_cost_calc.update_s();
 

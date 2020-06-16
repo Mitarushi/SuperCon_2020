@@ -409,7 +409,7 @@ int main() {
     // 大文字->小文字にして代入
     for (int i = 0; i < 26; i++) {
         for (auto j : get_insert(i)) {
-            insert.emplace_back(make_pair(j.first, j.second));
+            insert.emplace_back(j);
         }
     }
 
@@ -444,6 +444,7 @@ int main() {
             if (h != 1) h = h * 10 / 15;
         }
         swap_cost_calc.update_s();
+
         char tmp_s[100];
         sprintf(tmp_s, "1 %c%s\n", insert[i].first, insert[i].second.c_str());
         answer += tmp_s;
