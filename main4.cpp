@@ -427,7 +427,7 @@ int main() {
     for (int i = 0; i < 26; i++) {
         for (auto j : get_insert(i)) {
             insert.emplace_back(j);
-            cout << j.first << " " << j.second << endl;
+            // cout << j.first << " " << j.second << endl;
         }
     }
     auto swap_cost_calc = swap_calc(s, insert);
