@@ -31,8 +31,9 @@ void fill_dp(int alphabet) {
         for (int j = 0; j <= MAX_T; j++) {
             dp[i + 1][j] = dp[i][j];
             if (j - s_count[i] >= 0) {
-                dp[i + 1][j] = min(dp[i + 1][j], dp[i + 1][j - s_count[i]] +
-                                                     abs(i - alphabet) + 1);
+                dp[i + 1][j] =
+                    min(dp[i + 1][j], dp[i + 1][j - s_count[i]] +
+                                          (i - alphabet) * (i - alphabet) + 1);
             }
         }
     }
@@ -42,8 +43,9 @@ void fill_dp(int alphabet) {
 void nap_count(int i, int alphabet) {
     for (int j = 25; j >= 0; j--) {
         while (1) {
-            if (i < s_count[j] || dp[j + 1][i] != dp[j + 1][i - s_count[j]] +
-                                                      abs(j - alphabet) + 1) {
+            if (i < s_count[j] ||
+                dp[j + 1][i] != dp[j + 1][i - s_count[j]] +
+                                    (j - alphabet) * (j - alphabet) + 1) {
                 break;
             } else {
                 i -= s_count[j];
