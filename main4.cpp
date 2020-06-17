@@ -28,12 +28,13 @@ void fill_dp(int alphabet) {
     fill(dp[0], dp[27], MAX_DP);
     dp[0][0] = 0;
     for (int i = 0; i < 26; i++) {
+        int diff = abs(i - alphabet);
+        int cos = diff * diff;
         for (int j = 0; j <= MAX_T; j++) {
             dp[i + 1][j] = dp[i][j];
             if (j - s_count[i] >= 0) {
                 dp[i + 1][j] =
-                    min(dp[i + 1][j], dp[i + 1][j - s_count[i]] +
-                                          (i - alphabet) * (i - alphabet) + 1);
+                    min(dp[i + 1][j], dp[i + 1][j - s_count[i]] + cos + 1);
             }
         }
     }
@@ -42,10 +43,11 @@ void fill_dp(int alphabet) {
 // ナップザックの復元
 void nap_count(int i, int alphabet) {
     for (int j = 25; j >= 0; j--) {
+        int diff = abs(j - alphabet);
+        int cos = diff * diff;
         while (1) {
             if (i < s_count[j] ||
-                dp[j + 1][i] != dp[j + 1][i - s_count[j]] +
-                                    (j - alphabet) * (j - alphabet) + 1) {
+                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + cos + 1) {
                 break;
             } else {
                 i -= s_count[j];
@@ -442,11 +444,12 @@ int main() {
         // int index_len = char_index.size();
 
         //ここの回数、調整の余地あり コムソートベースにした
-        int h = s_length * 10 / 60;
-        for (int j = 0; j < 4; j++) {
+        int h = s_length * 10 / 15;
+        if (h < 1) h = 1;
+        for (int j = 0; j < 6; j++) {
             for (int a = 0; a < s_length - h; a++) {
                 gettimeofday(&t2, NULL);
-                if (get_elapsed_time(&t1, &t2) > 8200) break;
+                if (get_elapsed_time(&t1, &t2) > 8500) break;
 
                 int b = a + h;
                 auto diff = swap_cost_calc.swap_diff(a, b);
@@ -460,7 +463,10 @@ int main() {
                 }
             }
 
-            if (h != 1) h = h * 10 / 60;
+            if (h >= 5)
+                h = h / 5;
+            else
+                h = 1;
         }
         swap_cost_calc.update_s();
 
@@ -477,10 +483,11 @@ int main() {
     ll real_cost = swap_cost_calc.swap_cost;
 
     s = swap_cost_calc.s;
+    // cout << s << endl;
     real_cost += quicksort(s, 0, s.size() - 1);
 
     printf("%d\n%s", steps, answer.c_str());
 
     // ここを消し忘れてはいけない
-    cout << real_cost << endl;
+    // cout << real_cost << endl;
 }
