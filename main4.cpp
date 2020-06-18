@@ -444,16 +444,16 @@ int main() {
         // int index_len = char_index.size();
 
         //ここの回数、調整の余地あり コムソートベースにした
-        int h = s_length * 10 / 15;
+        int h = s_length * 3 / 4;
         if (h < 1) h = 1;
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < 4; j++) {
             for (int a = 0; a < s_length - h; a++) {
                 gettimeofday(&t2, NULL);
-                if (get_elapsed_time(&t1, &t2) > 8500) break;
+                if (get_elapsed_time(&t1, &t2) > 8500 || steps >= 450000) break;
 
                 int b = a + h;
                 auto diff = swap_cost_calc.swap_diff(a, b);
-                if (diff.first < 0) {
+                if (diff.first < -100) {
                     swap_cost_calc.swap_string(a, b, diff.second);
 
                     char tmp_s[100];
@@ -463,8 +463,10 @@ int main() {
                 }
             }
 
-            if (h >= 5)
-                h = h / 5;
+            if (h >= 8)
+                h = h / 8;
+            else if (h == 1)
+                break;
             else
                 h = 1;
         }

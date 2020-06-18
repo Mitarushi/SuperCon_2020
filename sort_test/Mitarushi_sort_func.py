@@ -41,7 +41,7 @@ def quick_sort(s, l=0, r=-1):
     cost = 0
     if l < r:
         i, j = l, r
-        pivot = med3(s[l], s[l+(r-l)//2], s[r])
+        pivot = s[randint(l, r)]
         while True:
             while s[i] < pivot:
                 i += 1
