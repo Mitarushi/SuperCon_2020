@@ -1,10 +1,12 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <random>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -21,13 +23,33 @@ int coun[26][26]{};
 
 string answer = "";
 int steps = 0;
+int real_cost = 0;
+
+// ペナルティが最小となるDP
+void fill_dp(int alphabet) {
+    fill(dp[0], dp[27], MAX_DP);
+    dp[0][0] = 0;
+    for (int i = 0; i < 26; i++) {
+        int diff = abs(i - alphabet);
+        int cos = diff * diff;
+        for (int j = 0; j <= MAX_T; j++) {
+            dp[i + 1][j] = dp[i][j];
+            if (j - s_count[i] >= 0) {
+                dp[i + 1][j] =
+                    min(dp[i + 1][j], dp[i + 1][j - s_count[i]] + cos + 1);
+            }
+        }
+    }
+}
 
 // ナップザックの復元
 void nap_count(int i, int alphabet) {
     for (int j = 25; j >= 0; j--) {
+        int diff = abs(j - alphabet);
+        int cos = diff * diff;
         while (1) {
             if (i < s_count[j] ||
-                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + 1) {
+                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + cos + 1) {
                 break;
             } else {
                 i -= s_count[j];
@@ -39,295 +61,155 @@ void nap_count(int i, int alphabet) {
 
 // ダブリングで構築 アルファベットごとに
 // というわけではなくて、単純にN倍しています
+// 後、この文字が何倍になるかという情報を返している
+// 多分倍率が小さいものから代入するほうがコストが低い
 vector<pair<char, string>> get_insert(int al) {
     vector<pair<char, string>> ans;
     string string_to = "";
+    vector<int> kouho;
+    int sum = 0;
     for (int i = 0; i < 26; i++) {
         if (coun[al][i] > 0) {
             string_to += 'A' + i;
+            kouho.push_back(i);
+            sum += coun[al][i];
         }
     }
-    ans.emplace_back(make_pair('a' + al, string_to));
-    for (int i = 0; i < 26; i++) {
-        if (coun[al][i] > 0) {
-            ans.emplace_back(
-                make_pair('A' + i, std::string(coun[al][i], 'a' + i)));
-        }
-    }
+    sort(kouho.begin(), kouho.end(),
+         [&](int const& i, int const& j) { return coun[al][i] < coun[al][j]; });
 
+    ans.emplace_back(make_pair('a' + al, string_to));
+    for (const& i : kouho) {
+        ans.emplace_back(make_pair('A' + i, std::string(coun[al][i], 'a' + i)));
+    }
     return ans;
 }
 
-ll min_cost;  // tのコスト
-ll t_length;
-const double cost_param[] = {
-    -0.0000000000008402,     0.0000004798000799,    -0.0002000268185879,
-    0.0044613262787533,      -0.0000001652505149,   0.2437505930922388,
-    -7.7352385687962633,     25.8180687932298483,   0.0000356935469576,
-    -5.5227029004491737,     1456.5673308701468613, -47616.8398519225956989,
-    -0.0145529321527654,     224.8752720847048465,  -54970.5081915919436142,
-    2140886.3656231933273375};
-
-ll simple_cost(const string& s) {
-    ll cost = 0;
-    for (int i = 0; i < s.size(); i++) {
-        cost += i * (26 - (int)(s[i] - 'a'));
+tuple<vector<vector<int>>, vector<vector<int>>> get_char_cost(
+    vector<pair<char, string>>& insert) {
+    int size = insert.size();
+    vector<vector<int>> cost(size + 1,
+                             vector<int>(58));  // 58は'z'-'A'=57のため
+    vector<vector<int>> length(size + 1, vector<int>(58, 1));
+    for (int i = 0; i < 26; i++) {
+        cost[size]['a' + i - 'A'] = i;
     }
-    return cost;
-}
 
-ll fix_cost(ll n, ll cost) {
-    double a[] = {n * n, n, pow(n, 0.5), 1};
-    double b[] = {cost, pow(cost, 0.5), pow(cost, 0.25), 1};
+    for (int i = insert.size() - 1; i >= 0; i--) {
+        for (int j = 0; j < 58; j++) {
+            cost[i][j] = cost[i + 1][j];
+            length[i][j] = length[i + 1][j];
+        }
 
-    int param_count = 0;
-    double correct = 0;
-    for (double j : b) {
-        for (double i : a) {
-            correct += i * j * cost_param[param_count];
-            param_count++;
+        char from;
+        string to;
+        tie(from, to) = insert[i];
+        int from_int = from - 'A';
+        cost[i][from_int] = 0;
+        length[i][from_int] = 0;
+        for (char j : to) {
+            cost[i][from_int] += cost[i + 1][j - 'A'];
+            length[i][from_int] += length[i + 1][j - 'A'];
         }
     }
-    return (ll)round(correct);
+    return make_tuple(cost, length);
 }
 
-// 0-indexedに改造して、テンプレートをいろいろしたやつ
 template <typename T>
-class BIT {
-   private:
-    vector<T> bit;
-    int size;
+void cycle_sort(vector<T>& a, vector<int>& cycle) {
+    if (cycle.size() <= 1) return;
 
-   public:
-    BIT() {}
+    int n = cycle.size();
+    int i;
+    for (i = 0; i < n - 1; i++) {
+        if (a[cycle[i]] > cycle[i] && a[cycle[i + 1]] < cycle[i + 1]) {
+            swap(a[cycle[i]], a[cycle[i + 1]]);
 
-    BIT(int n) {
-        bit.resize(n + 1);
-        size = n;
-    }
-    T sum(int i) {
-        i++;
-        T res = 0;
-        while (i > 0) {
-            res += bit[i];
-            i -= i & -i;
-        }
-        return res;
-    }
-    void add(int i, T x) {
-        i++;
-        while (i <= size) {
-            bit[i] += x;
-            i += i & -i;
+            char tmp_s[100];
+            sprintf(tmp_s, "2 %d %d\n", cycle[i] + 1, a[cycle[i + 1]] + 1);
+            answer += tmp_s;
+            steps++;
+            real_cost += abs(cycle[i] - cycle[i + 1]);
+            break;
         }
     }
+    vector<int> cycle_a, cycle_b;
+    int j = cycle[i];
+    do {
+        cycle_a.push_back(j);
+        j = a[j];
+    } while (j != cycle[i]);
+    j = cycle[i + 1];
+    do {
+        cycle_b.push_back(j);
+        j = a[j];
+    } while (j != cycle[i + 1]);
 
-    // [i,j)の和
-    T section(int i, int j) { return sum(j - 1) - sum(i - 1); }
-};
+    sort(cycle_a.begin(), cycle_a.end());
+    sort(cycle_b.begin(), cycle_b.end());
 
-class swap_calc {
-   public:
-    vector<pair<char, string>> insert;
-    // vector<vector<pair<int, int>>> swap_item;
-    string s;
-    ll cost_estimate;
-    ll swap_cost;
-    int s_length;
+    cycle_sort(a, cycle_a);
+    cycle_sort(a, cycle_b);
+}
 
-    vector<vector<int>> letter_cost;
-    vector<vector<int>> letter_length;
-    int insert_index;
+template <typename T>
+void cycle_sort(vector<T>& a) {
+    int n = a.size();
+    vector<bool> is_used(n, false);
 
-    vector<int> string_cost;
-    vector<int> string_length;
-    BIT<int> cost_bit;
-    BIT<int> length_bit;
+    for (int i = 0; i < n; i++) {
+        if (is_used[i]) continue;
 
-    // 初期化
-    swap_calc(string s, const vector<pair<char, string>>& insert) {
-        this->insert = insert;
-        this->s = s;
-        s_length = s.size();
-        // swap_item.resize(insert.size());
-        cost_estimate = calc_first_cost();
-        swap_cost = 0;
-        insert_index = 0;
+        vector<int> cycle;
+        int j = i;
+        do {
+            cycle.push_back(j);
+            is_used[j] = true;
+            j = a[j];
+        } while (j != i);
 
-        calc_letter_cost();
-    }
-
-    // 現状のswapアルゴリズムだと差分しか計算できないので、代入後のコストを前もって計算しておく
-    ll calc_first_cost() {
-        string t = s;
-        for (auto ins : insert) {
-            string nt = "";
-            for (auto i : t) {
-                if (i == ins.first) {
-                    nt += ins.second;
-                } else {
-                    nt += i;
-                }
-            }
-            t = nt;
-        }
-        return simple_cost(t) - min_cost;
-    }
-
-    // それぞれの文字がどれだけのコスト寄与分を持っているか計算する
-    void calc_letter_cost() {
-        letter_cost.emplace_back(vector<int>(58, 0));  // 58は'z'-'A'=57のため
-        letter_length.emplace_back(vector<int>(58, 1));
-        for (int i = 'a'; i <= 'z'; i++) {
-            letter_cost[0][i - 'A'] = 26 - (i - 'a');
-        }
-
-        for (int i = insert.size() - 1; i >= 0; i--) {
-            vector<int> tmp1 = letter_cost[letter_cost.size() - 1];
-            vector<int> tmp2 = letter_length[letter_length.size() - 1];
-            int s = 0;
-            int t = 0;
-            for (char j : insert[i].second) {
-                s += tmp1[j - 'A'];
-                t += tmp2[j - 'A'];
-            }
-            tmp1[insert[i].first - 'A'] = s;
-            tmp2[insert[i].first - 'A'] = t;
-            letter_cost.emplace_back(tmp1);
-            letter_length.emplace_back(tmp2);
-        }
-        reverse(letter_cost.begin(), letter_cost.end());
-        reverse(letter_length.begin(), letter_length.end());
-    }
-
-    // insert_index番目の代入を行う (insert_indexも増やす)
-    void update_s() {
-        string ns = "";
-        auto ins = insert[insert_index];
-        for (char i : s) {
-            if (i == ins.first) {
-                ns += ins.second;
-            } else {
-                ns += i;
-            }
-        }
-        s = ns;
-        s_length = s.size();
-        insert_index++;
-    }
-
-    // insert_index番目の前にあるswapを計算するときの、bitとかの初期化
-    void init_BIT() {
-        string_cost.resize(s_length);
-        string_length.resize(s_length);
-        cost_bit = BIT<int>(s_length);
-        length_bit = BIT<int>(s_length);
-        for (int i = 0; i < s_length; i++) {
-            string_cost[i] = letter_cost[insert_index][s[i] - 'A'];
-            string_length[i] = letter_length[insert_index][s[i] - 'A'];
-
-            cost_bit.add(i, letter_cost[insert_index][s[i] - 'A']);
-            length_bit.add(i, letter_length[insert_index][s[i] - 'A']);
-        }
-    }
-
-    // sのi番目とj番目をswapしてestimate_costを更新する
-    void swap_string(int i, int j) {
-        swap_cost += abs(i - j);
-        cost_estimate +=
-            -length_bit.section(i, j) * string_cost[j] +
-            length_bit.section(i + 1, j + 1) * string_cost[i] +
-            cost_bit.section(i + 1, j) * (string_length[j] - string_length[i]);
-
-        cost_bit.add(i, -string_cost[i] + string_cost[j]);
-        cost_bit.add(j, -string_cost[j] + string_cost[i]);
-        length_bit.add(i, -string_length[i] + string_length[j]);
-        length_bit.add(j, -string_length[j] + string_length[i]);
-        swap(s[i], s[j]);
-        swap(string_cost[i], string_cost[j]);
-        swap(string_length[i], string_length[j]);
-    }
-    void swap_string(int i, int j, ll estimate_diff) {
-        swap_cost += abs(i - j);
-        cost_estimate += estimate_diff;
-
-        cost_bit.add(i, -string_cost[i] + string_cost[j]);
-        cost_bit.add(j, -string_cost[j] + string_cost[i]);
-        length_bit.add(i, -string_length[i] + string_length[j]);
-        length_bit.add(j, -string_length[j] + string_length[i]);
-        swap(s[i], s[j]);
-        swap(string_cost[i], string_cost[j]);
-        swap(string_length[i], string_length[j]);
-    }
-
-    pair<ll, ll> swap_diff(int i, int j) {
-        ll swap_diff = abs(i - j);
-        ll estimate_diff =
-            -length_bit.section(i, j) * string_cost[j] +
-            length_bit.section(i + 1, j + 1) * string_cost[i] +
-            cost_bit.section(i + 1, j) * (string_length[j] - string_length[i]);
-
-        return make_pair(swap_diff - fix_cost(t_length, cost_estimate) +
-                             fix_cost(t_length, cost_estimate + estimate_diff),
-                         estimate_diff);
-    }
-
-    // 挿入されるcharのindexを返す
-    vector<int> insert_char_index() {
-        vector<int> res;
-        for (int i = 0; i < s.size(); i++) {
-            if (s[i] == insert[insert_index].first) {
-                res.push_back(i);
-            }
-        }
-        return res;
-    }
-};
-
-char med3(char x, char y, char z) {
-    if (x < y) {
-        if (y < z)
-            return y;
-        else if (z < x)
-            return x;
-        else
-            return z;
-    } else {
-        if (z < y)
-            return y;
-        else if (x < z)
-            return x;
-        else
-            return z;
+        sort(cycle.begin(), cycle.end());
+        cycle_sort(a, cycle);
     }
 }
 
-// ここにswapの出力あるよ
-ll quicksort(string a, int left, int right) {
-    ll cost = 0;
-    if (left < right) {
-        int i = left, j = right;
-        char pivot = med3(a[i], a[i + (j - i) / 2], a[j]);
-        while (true) {
-            while (a[i] < pivot) i++;
-            while (pivot < a[j]) j--;
-            if (i >= j) break;
-            if (a[i] != a[j]) {
-                swap(a[i], a[j]);
-                cost += abs(j - i);
-
-                char tmp_s[100];
-                sprintf(tmp_s, "2 %d %d\n", i + 1, j + 1);
-                answer += tmp_s;
-                steps++;
-            }
-            i++;
-            j--;
-        }
-        cost += quicksort(a, left, i - 1);
-        cost += quicksort(a, j + 1, right);
+pair<vector<int>, string> sorted_index(string& s, vector<int>& cost,
+                                       vector<int>& length) {
+    int n = s.size();
+    vector<int> from(n);
+    for (int i = 0; i < n; i++) {
+        from[i] = i;
     }
-    return cost;
+    sort(from.begin(), from.end(), [&](const int& i, const int& j) {
+        int a = s[i] - 'A', b = s[j] - 'A';
+        return cost[a] * length[b] < cost[b] * length[a];
+    });
+
+    string new_s = "";
+    vector<int> to(n);
+    for (int i = 0; i < n; i++) {
+        new_s += s[from[i]];
+        to[from[i]] = i;
+    }
+    return {to, new_s};
+}
+
+string insert_string(string& s, pair<char, string>& insert) {
+    string new_s = "";
+    for (char i : s) {
+        if (i == insert.first) {
+            new_s += insert.second;
+        } else {
+            new_s += i;
+        }
+    }
+    char tmp_s[100];
+    sprintf(tmp_s, "1 %c%s\n", insert.first, insert.second.c_str());
+    answer += tmp_s;
+    steps++;
+    real_cost += insert.second.size();
+
+    return new_s;
 }
 
 //乱数
@@ -347,11 +229,16 @@ unsigned int xor128() {
 int range_random(int a, int b) { return xor128() % (b - a) + a; }
 int range_random(int a) { return range_random(0, a); }
 
+template <typename T>
+void show_vector(vector<T>& a) {
+    for (int i = 0; i < a.size(); i++) {
+        printf("%02d ", a[i]);
+    }
+    printf("\n");
+}
+
 int main() {
     cin >> s >> t;
-
-    min_cost = simple_cost(t);  // ココ大切
-    t_length = t.size();        // ココ大切
 
     // sとtの文字のカウント
     for (auto i : s) {
@@ -361,20 +248,9 @@ int main() {
         t_count[i - 'a']++;
     }
 
-    // 和が最小となるDP
-    fill(dp[0], dp[27], MAX_DP);
-    dp[0][0] = 0;
-    for (int i = 0; i < 26; i++) {
-        for (int j = 0; j <= MAX_T; j++) {
-            dp[i + 1][j] = dp[i][j];
-            if (j - s_count[i] >= 0) {
-                dp[i + 1][j] = min(dp[i + 1][j], dp[i + 1][j - s_count[i]] + 1);
-            }
-        }
-    }
-
     // 全てで復元可能かチャック
     for (int i = 0; i < 26; i++) {
+        fill_dp(i);
         if (dp[26][t_count[i]] == MAX_DP) {
             cout << "NO" << endl;
             return 0;
@@ -384,8 +260,6 @@ int main() {
     }
     cout << "YES" << endl;
 
-    vector<pair<char, string>> insert;
-
     // // 小文字を大文字に変換
     // for (int i = 0; i < 26; i++) {
     //     if (s_count[i] > 0) {
@@ -394,58 +268,50 @@ int main() {
     //     }
     // }
 
-    // 大文字->小文字にして代入
+    // それぞれのSの文字が何倍になっているかを見て、小さいものから代入する
+    vector<int> sum(26, 0);
     for (int i = 0; i < 26; i++) {
+        for (int j = 0; j < 26; j++) {
+            sum[i] += coun[i][j];
+        }
+    }
+    vector<int> dainyuu;
+    for (int i = 0; i < 26; i++) {
+        if (sum[i]) dainyuu.push_back(i);
+    }
+    sort(dainyuu.begin(), dainyuu.end(),
+         [&](const int& i, const int& j) { return sum[i] < sum[j]; });
+
+    vector<pair<char, string>> insert;
+    // 代入の操作を追加
+    for (auto i : dainyuu) {
         for (auto j : get_insert(i)) {
             insert.emplace_back(j);
         }
     }
 
-    auto swap_cost_calc = swap_calc(s, insert);
     random_device rnd;
     // mt19937 mt(rnd());
     init_xor128(rnd());
 
+    vector<vector<int>> cost_insert, lenth_insert;
+    tie(cost_insert, lenth_insert) = get_char_cost(insert);
+
     for (int i = 0; i < insert.size(); i++) {
-        swap_cost_calc.init_BIT();
-        int s_length = swap_cost_calc.s.size();
-
-        // auto char_index = swap_cost_calc.insert_char_index();
-        // int index_len = char_index.size();
-
-        //ここの回数、調整の余地あり
-        for (int j = 0; j < s_length * 20; j++) {
-            // int a = char_index[mt() % index_len], b = mt() % s_length;
-            // int a = mt() % s_length, b = mt() % s_length;
-            int a = xor128() % s_length, b = xor128() % s_length;
-            if (a > b) swap(a, b);
-            if (a == b) continue;
-            auto diff = swap_cost_calc.swap_diff(a, b);
-            if (diff.first < 0) {
-                swap_cost_calc.swap_string(a, b, diff.second);
-
-                char tmp_s[100];
-                sprintf(tmp_s, "2 %d %d\n", a + 1, b + 1);
-                answer += tmp_s;
-                steps++;
-            }
+        if (i % 2 == 0 || i == insert.size() - 1) {
+            vector<int> to;
+            string new_s;
+            tie(to, new_s) = sorted_index(s, cost_insert[i], lenth_insert[i]);
+            cycle_sort(to);
+            new_s = insert_string(new_s, insert[i]);
+            s = new_s;
+        } else {
+            string new_s;
+            new_s = insert_string(s, insert[i]);
+            s = new_s;
         }
-        swap_cost_calc.update_s();
-
-        char tmp_s[100];
-        sprintf(tmp_s, "1 %c%s\n", insert[i].first, insert[i].second.c_str());
-        answer += tmp_s;
-        steps++;
+        // cout << s << endl;
     }
-    /*cout << "estimate"
-         << fix_cost(t_length, swap_cost_calc.cost_estimate) +
-                swap_cost_calc.swap_cost
-         << endl;*/
-
-    ll real_cost = swap_cost_calc.swap_cost;
-
-    s = swap_cost_calc.s;
-    real_cost += quicksort(s, 0, s.size() - 1);
 
     printf("%d\n%s", steps, answer.c_str());
 
