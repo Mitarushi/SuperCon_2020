@@ -456,7 +456,6 @@ int main() {
         sprintf(tmp_s, "1 %c%s\n", insert[i].first, insert[i].second.c_str());
         answer += tmp_s;
         steps++;
-        cout << swap_cost_calc.s.size() << endl;
     }
     /*cout << "estimate"
          << fix_cost(t_length, swap_cost_calc.cost_estimate) +
@@ -469,7 +468,7 @@ int main() {
     // cout << s << endl;
     real_cost += quicksort(s, 0, s.size() - 1);
 
-    printf("%d\n%s", steps, answer.c_str());
+    // printf("%d\n%s", steps, answer.c_str());
 
     // ここを消し忘れてはいけない
     cout << real_cost << endl;

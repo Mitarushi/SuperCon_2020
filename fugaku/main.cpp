@@ -34,7 +34,7 @@ void fill_dp(int alphabet) {
         int cos = diff * diff;
         for (int j = 0; j <= MAX_T; j++) {
             dp[i + 1][j] = dp[i][j];
-            if (j - s_count[i] >= 0 && i < 5) {
+            if (j - s_count[i] >= 0 && i < 100) {
                 dp[i + 1][j] =
                     min(dp[i + 1][j], dp[i + 1][j - s_count[i]] + cos + 1);
             }
@@ -64,39 +64,39 @@ void nap_count(int i, int alphabet) {
 // 後、この文字が何倍になるかという情報を返している
 // 多分倍率が小さいものから代入するほうがコストが低い
 // ダブリングで構築 アルファベットごとに
-vector<pair<char, string>> get_insert(int al) {
-    vector<pair<char, string>> ans;
-    vector<int> kouho;
-    for (int i = 0; i < 26; i++) {
-        if (coun[al][i] > 0) kouho.push_back(i);
-    }
+// vector<pair<char, string>> get_insert(int al) {
+//     vector<pair<char, string>> ans;
+//     vector<int> kouho;
+//     for (int i = 0; i < 26; i++) {
+//         if (coun[al][i] > 0) kouho.push_back(i);
+//     }
 
-    for (int i = 0; i < kouho.size(); i++) {
-        string string_to = string(coun[al][kouho[i]], 'a' + kouho[i]);
-        if (i != kouho.size() - 1) {
-            string_to += 'A' + al;
-        }
-        ans.emplace_back(make_pair('A' + al, string_to));
-    }
-    return ans;
-}
+//     for (int i = 0; i < kouho.size(); i++) {
+//         string string_to = string(coun[al][kouho[i]], 'a' + kouho[i]);
+//         if (i != kouho.size() - 1) {
+//             string_to += 'A' + al;
+//         }
+//         ans.emplace_back(make_pair('A' + al, string_to));
+//     }
+//     return ans;
+// }
 
 // 改善の余地あり
 // ダブリングで構築 アルファベットごとに
-// vector<pair<char, string>> get_insert(int al) {
-//     vector<pair<char, string>> ans;
-//     string string_to = "";
-//     int sum = 0;
-//     for (int i = 0; i < 26; i++) {
-//         if (coun[al][i] > 0) {
-//             string_to += std::string(coun[al][i], 'a' + i);
-//             sum += coun[al][i];
-//         }
-//     }
-//     ans.emplace_back(make_pair('A' + al, string_to));
+vector<pair<char, string>> get_insert(int al) {
+    vector<pair<char, string>> ans;
+    string string_to = "";
+    int sum = 0;
+    for (int i = 0; i < 26; i++) {
+        if (coun[al][i] > 0) {
+            string_to += std::string(coun[al][i], 'a' + i);
+            sum += coun[al][i];
+        }
+    }
+    ans.emplace_back(make_pair('A' + al, string_to));
 
-//     return ans;
-// }
+    return ans;
+}
 
 tuple<vector<vector<int>>, vector<vector<int>>> get_char_cost(
     vector<pair<char, string>>& insert) {
@@ -276,10 +276,8 @@ int main() {
     vector<pair<char, string>> insert;
     // // 小文字を大文字に変換
     for (int i = 0; i < 26; i++) {
-        if (s_count[i] > 0) {
-            string tmp{(char)(i + 'A')};
-            insert.emplace_back(make_pair(i + 'a', tmp));
-        }
+        string tmp{(char)(i + 'A')};
+        insert.emplace_back(make_pair(i + 'a', tmp));
     }
 
     // それぞれのSの文字が何倍になっているかを見て、小さいものから代入する
@@ -291,7 +289,10 @@ int main() {
     }
     vector<int> dainyuu;
     for (int i = 0; i < 26; i++) {
-        if (sum[i]) dainyuu.push_back(i);
+        if (sum[i])
+            dainyuu.push_back(i);
+        else
+            insert.emplace_back(make_pair('A' + i, ""));
     }
     sort(dainyuu.begin(), dainyuu.end(),
          [&](const int& i, const int& j) { return sum[i] < sum[j]; });
@@ -311,16 +312,14 @@ int main() {
     tie(cost_insert, lenth_insert) = get_char_cost(insert);
 
     for (int i = 0; i < insert.size(); i++) {
-        if (i % 1 == 0 || i == insert.size() - 1) {
+        s = insert_string(s, insert[i]);
+
+        if (i < 1 || i == insert.size() - 1) {
             vector<int> to;
             string new_s;
             tie(to, new_s) = sorted_index(s, cost_insert[i], lenth_insert[i]);
             cycle_sort(to);
             new_s = insert_string(new_s, insert[i]);
-            s = new_s;
-        } else {
-            string new_s;
-            new_s = insert_string(s, insert[i]);
             s = new_s;
         }
         // cout << s << endl;
