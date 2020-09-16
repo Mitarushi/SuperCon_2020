@@ -150,7 +150,7 @@ vector<pair<char, string>> get_insert(int al) {
     for (int i = 0; i < 26; i++) {
         if (coun[al][i] > 0) kouho.push_back(i);
     }
-    if (kouho.size() == 0) return {{'A' + al, ""}};
+    if (kouho.size() == 0) return ans;
 
     for (int i = 0; i < kouho.size(); i++) {
         string string_to;
@@ -369,11 +369,6 @@ int main() {
     }
 
     vector<pair<char, string>> insert;
-    // // 小文字を大文字に変換
-    for (int i = 0; i < 26; i++) {
-        string tmp{(char)(i + 'A')};
-        insert.emplace_back(make_pair(i + 'a', tmp));
-    }
 
     fill_coun(use_s);
 
@@ -389,15 +384,27 @@ int main() {
         if (sum[i]) {
             dainyuu.push_back(i);
         } else {
-            insert.emplace_back(make_pair('A' + i, ""));
+            insert.emplace_back(make_pair('a' + i, ""));
         }
     }
     sort(dainyuu.begin(), dainyuu.end(),
          [&](const int& i, const int& j) { return sum[i] < sum[j]; });
 
+    // // 小文字を大文字に変換
+    for (int i = 0; i < 26; i++) {
+        string tmp{(char)(i + 'A')};
+        insert.emplace_back(make_pair(i + 'a', tmp));
+    }
+
+    vector<vector<pair<char, string>>> insert_alphabet(char_size);
     // 代入の操作を追加
     for (auto i : dainyuu) {
         for (auto j : get_insert(i)) {
+            insert_alphabet[j.second[0] - 'a'].emplace_back(j);
+        }
+    }
+    for (int i = 0; i < char_size; i++) {
+        for (auto& j : insert_alphabet[i]) {
             insert.emplace_back(j);
         }
     }
@@ -410,7 +417,7 @@ int main() {
     tie(cost_insert, lenth_insert) = get_char_cost(insert);
     for (int i = 0; i < insert.size(); i++) {
         s = insert_string(s, insert[i]);
-        if (i % 5 == 0 || i == insert.size() - 1) {
+        if ((i > 26 && i % 5 == 0) || i == insert.size() - 1) {
             vector<int> to;
             string new_s;
             tie(to, new_s) = sorted_index(s, cost_insert[i], lenth_insert[i]);

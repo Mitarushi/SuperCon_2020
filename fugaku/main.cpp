@@ -319,7 +319,6 @@ int main() {
             string new_s;
             tie(to, new_s) = sorted_index(s, cost_insert[i], lenth_insert[i]);
             cycle_sort(to);
-            new_s = insert_string(new_s, insert[i]);
             s = new_s;
         }
         // cout << s << endl;
