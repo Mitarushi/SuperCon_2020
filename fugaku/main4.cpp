@@ -122,30 +122,13 @@ void fill_coun(vector<int>& use_s) {
     }
 }
 
-// ナップザックの復元
-void nap_count(int i, int alphabet) {
-    for (int j = 25; j >= 0; j--) {
-        int diff = abs(j - alphabet);
-        int cos = diff * diff;
-        while (1) {
-            if (i < s_count[j] ||
-                dp[j + 1][i] != dp[j + 1][i - s_count[j]] + cos + 1) {
-                break;
-            } else {
-                i -= s_count[j];
-                coun[j][alphabet]++;
-            }
-        }
-    }
-}
-
 // ダブリングで構築 アルファベットごとに
 // というわけではなくて、単純にN倍しています
 // 後、この文字が何倍になるかという情報を返している
 // 多分倍率が小さいものから代入するほうがコストが低い
 // ダブリングで構築 アルファベットごとに
-vector<pair<char, string>> get_insert(int al) {
-    vector<pair<char, string>> ans;
+vector<tuple<char, string, bool>> get_insert(int al) {
+    vector<tuple<char, string, bool>> ans;
     vector<int> kouho;
     for (int i = 0; i < 26; i++) {
         if (coun[al][i] > 0) kouho.push_back(i);
@@ -155,11 +138,9 @@ vector<pair<char, string>> get_insert(int al) {
     for (int i = 0; i < kouho.size(); i++) {
         string string_to;
         string_to += string(coun[al][kouho[i]], 'a' + kouho[i]);
-        if (i != kouho.size() - 1) {
-            string_to += 'A' + al;
-        }
 
-        ans.emplace_back(make_pair('A' + al, string_to));
+        ans.emplace_back(
+            make_tuple('A' + al, string_to, i != kouho.size() - 1));
     }
     return ans;
 }
@@ -396,16 +377,23 @@ int main() {
         insert.emplace_back(make_pair(i + 'a', tmp));
     }
 
-    vector<vector<pair<char, string>>> insert_alphabet(char_size);
+    vector<vector<tuple<char, string, bool>>> insert_alphabet(char_size);
     // 代入の操作を追加
     for (auto i : dainyuu) {
         for (auto j : get_insert(i)) {
-            insert_alphabet[j.second[0] - 'a'].emplace_back(j);
+            insert_alphabet[get<1>(j)[0] - 'a'].emplace_back(j);
         }
     }
+    char t_last = t[t.size() - 1];
     for (int i = 0; i < char_size; i++) {
         for (auto& j : insert_alphabet[i]) {
-            insert.emplace_back(j);
+            if (!get<2>(j)) {
+                insert.emplace_back(make_pair(get<0>(j), get<1>(j)));
+            } else {
+                insert.emplace_back(
+                    make_pair(get<0>(j), string({t_last, get<0>(j)})));
+                insert.emplace_back(make_pair(t_last, get<1>(j)));
+            }
         }
     }
 
