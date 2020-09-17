@@ -71,7 +71,6 @@ bool check_t(vector<char>& dp) {
     return true;
 }
 
-int ok = 0;
 int get_min_s() {
     vector<vector<char>> table(1 << char_size);
     vector<char> used(1 << char_size);
@@ -98,8 +97,7 @@ int get_min_s() {
             table[i].resize(max_t);
             get_next_dp(table[from], table[i], add);
             if (check_t(table[i])) {
-                ok++;
-                if (ok == 3) return i;
+                 return i;
             }
         }
 
@@ -336,7 +334,7 @@ int main() {
     random_device rnd;
     // mt19937 mt(rnd());
     init_xor128(rnd());
-    int order_int = (1 << 26) - 1;
+    int order_int = 0;
     // order_int = range_random(1);
     // order_int = 0;
 
@@ -447,7 +445,7 @@ int main() {
     }
 
     // printf("%d\n%s", steps, answer.c_str());
-
+    cout << insert.size() << endl;
     show_vector(order);
     // ここを消し忘れてはいけない
     cout << real_cost << endl;
