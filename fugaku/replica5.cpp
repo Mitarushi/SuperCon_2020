@@ -448,7 +448,7 @@ int main() {
                 min_cost = i;
             }
         }
-        printf("epoch %.3;f : in %dK, %x is the lowest cost(%d)\n", ep + 1,
+        printf("epoch %.3lf : in %dK, %x is the lowest cost(%d)\n", ep + 1,
                temp[min_cost], state[min_cost], cost[min_cost]);
     }
 }
