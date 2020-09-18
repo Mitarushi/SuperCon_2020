@@ -29,7 +29,7 @@ const int step_epoch = 10;
 const int epoch = 1000;
 const double min_temp = 0.001;
 // max is for 500000 cost
-const double max_temp = 100000.0;
+const double max_temp = 50000.0;
 
 //乱数
 unsigned int seed[4];
