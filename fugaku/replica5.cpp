@@ -24,11 +24,12 @@ int use_s_int;
 
 constexpr int char_size = 26;
 
-const int replica = 96;
+const int replica = 192;
 const int step_epoch = 10;
 const int epoch = 1000;
-const double min_temp = 0.01;
-const double max_temp = 500;
+const double min_temp = 0.001;
+// max is for 500000 cost
+const double max_temp = 50000.0;
 
 //乱数
 unsigned int seed[4];
@@ -129,7 +130,7 @@ int get_min_s() {
 }
 
 struct calc_cost {
-    int coun[26][26];
+    vector<vector<int>> coun;
     ll real_cost;
 
     pair<vector<int>, vector<int>> get_order(int order_int) {
@@ -257,9 +258,9 @@ struct calc_cost {
         return new_s;
     }
 
-    ll get_cost(int order_int, string s, string t) {
+    ll get_cost(int order_int, string s) {
         real_cost = 0;
-        fill(coun[0], coun[26], 0);
+        coun = vector<vector<int>>(char_size, vector<int>(char_size, 0));
 
         vector<int> order, direct;
         tie(order, direct) = get_order(order_int);
@@ -364,12 +365,11 @@ int random_near(int state) {
     return state ^ (1 << i);
 }
 
-pair<int, ll> epoch_run(int state, calc_cost calculator, double temp) {
-    ll cost = calculator.get_cost(state, s, t);
+pair<int, ll> epoch_run(int state, calc_cost& calculator, double temp) {
+    ll cost = calculator.get_cost(state, s);
     for (int i = 0; i < step_epoch; i++) {
         int next_state = random_near(state);
-        ll next_cost = calculator.get_cost(state, s, t);
-
+        ll next_cost = calculator.get_cost(next_state, s);
         if (cost >= next_cost ||
             exp(-(double)(next_cost - cost) / temp) >= uniform_random()) {
             state = next_state;
@@ -407,12 +407,15 @@ int main() {
     max_t++;
 
     use_s_int = get_min_s();
+    
+    auto test_calc = calc_cost();
+    ll test_cost = test_calc.get_cost(0, s);
 
     vector<calc_cost> cost_calculator(replica);
     vector<double> temp(replica);
     for (int i = 0; i < replica; i++) {
         temp[i] = min_temp +
-                  (max_temp - min_temp) * (double)i / (double)(replica - 1);
+                  (max_temp * (test_cost / 500000) - min_temp) * (double)i / (double)(replica - 1);
     }
 
     vector<int> state(replica);
@@ -422,25 +425,27 @@ int main() {
 
     for (int ep = 0; ep < epoch; ep++) {
         vector<ll> cost(replica);
-
 #pragma omp parallel for
         for (int i = 0; i < replica; i++) {
             tie(state[i], cost[i]) =
                 epoch_run(state[i], cost_calculator[i], temp[i]);
         }
+		
+		for (int j = 0; j < replica / 12; j++){
+	        for (int i = 0; i < replica - 1; i += 2) {
+	            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
+	                uniform_random()) {
+	                swap(state[i], state[i + 1]);swap(cost[i], cost[i + 1]);
+	            }
+	        }
 
-        for (int i = 0; i < replica - 1; i++) {
-            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
-                uniform_random()) {
-                swap(state[i], state[i + 1]), swap(cost[i], cost[i + 1]);
-            }
-        }
-        for (int i = replica - 2; i >= 0; i--) {
-            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
-                uniform_random()) {
-                swap(state[i], state[i + 1]), swap(cost[i], cost[i + 1]);
-            }
-        }
+	        for (int i = 1; i < replica - 1; i += 2) {
+	            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
+	                uniform_random()) {
+	                swap(state[i], state[i + 1]);swap(cost[i], cost[i + 1]);
+	            }
+	        }
+	    }
 
         int min_cost = 0;
         for (int i = 0; i < replica; i++) {
@@ -448,7 +453,7 @@ int main() {
                 min_cost = i;
             }
         }
-        printf("epoch %.3lf : in %dK, %x is the lowest cost(%d)\n", ep + 1,
+        printf("epoch %d : in %.3lfK, %x is the lowest cost(%d)\n", ep + 1,
                temp[min_cost], state[min_cost], cost[min_cost]);
     }
 }
