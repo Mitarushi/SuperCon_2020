@@ -407,15 +407,15 @@ int main() {
     max_t++;
 
     use_s_int = get_min_s();
-    
+
     auto test_calc = calc_cost();
     ll test_cost = test_calc.get_cost(0, s);
 
     vector<calc_cost> cost_calculator(replica);
     vector<double> temp(replica);
     for (int i = 0; i < replica; i++) {
-        temp[i] = min_temp +
-                  (max_temp * (test_cost / 500000) - min_temp) * (double)i / (double)(replica - 1);
+        temp[i] = min_temp + (max_temp * (test_cost / 500000) - min_temp) *
+                                 (double)i / (double)(replica - 1);
     }
 
     vector<int> state(replica);
@@ -430,22 +430,24 @@ int main() {
             tie(state[i], cost[i]) =
                 epoch_run(state[i], cost_calculator[i], temp[i]);
         }
-		
-		for (int j = 0; j < replica / 12; j++){
-	        for (int i = 0; i < replica - 1; i += 2) {
-	            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
-	                uniform_random()) {
-	                swap(state[i], state[i + 1]);swap(cost[i], cost[i + 1]);
-	            }
-	        }
 
-	        for (int i = 1; i < replica - 1; i += 2) {
-	            if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
-	                uniform_random()) {
-	                swap(state[i], state[i + 1]);swap(cost[i], cost[i + 1]);
-	            }
-	        }
-	    }
+        for (int j = 0; j < replica / 12; j++) {
+            for (int i = 0; i < replica - 1; i += 2) {
+                if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
+                    uniform_random()) {
+                    swap(state[i], state[i + 1]);
+                    swap(cost[i], cost[i + 1]);
+                }
+            }
+
+            for (int i = 1; i < replica - 1; i += 2) {
+                if (swap_prob(temp[i], cost[i], temp[i + 1], cost[i + 1]) >=
+                    uniform_random()) {
+                    swap(state[i], state[i + 1]);
+                    swap(cost[i], cost[i + 1]);
+                }
+            }
+        }
 
         int min_cost = 0;
         for (int i = 0; i < replica; i++) {
