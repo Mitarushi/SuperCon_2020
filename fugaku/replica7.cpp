@@ -30,7 +30,7 @@ const double min_temp = 0.001;
 // max is for 500000 cost
 const double max_temp = 50000.0;
 
-using st = pair<int, vector<vector<int>>>;
+using st = pair<int, vector<int>>;
 
 //乱数
 unsigned int seed[4];
@@ -87,30 +87,27 @@ void show_vector(const vector<T>& a) {
 }
 
 st random_state() {
-    vector<vector<int>> weight(char_size, vector<int>(26));
+    vector<int> weight(char_size);
     for (int i = 0; i < char_size; i++) {
-        for (int j = 0; j < char_size; j++) {
-            weight[i][j] = range_random(char_size);
-        }
+        weight[i] = range_random(char_size);
     }
 
     return {range_random(1 << char_size), weight};
 }
 
 st state_from_min_s(int use_s) {
-    vector<vector<int>> weight(char_size, vector<int>(26));
+    vector<int> weight(char_size);
     for (int i = 0; i < char_size; i++) {
-        for (int j = 0; j < char_size; j++) {
-            weight[i][j] = ((use_s >> j) & 1) == 1 ? 0 : char_size - 1;
-        }
+        weight[i] = ((use_s >> i) & 1) == 1 ? 0 : char_size - 1;
     }
 
     return {range_random(1 << char_size), weight};
 }
 
-int get_min_s() {
+vector<int> get_min_s() {
     vector<vector<char>> table(1 << char_size);
     vector<char> used(1 << char_size);
+    vector<int> ans;
     table[0] = vector<char>(max_t, 0);
     table[0][0] = 1;
 
@@ -134,7 +131,8 @@ int get_min_s() {
             table[i].resize(max_t);
             get_next_dp(table[from], table[i], add);
             if (check_t(table[i])) {
-                return i;
+                ans.push_back(i);
+                if (ans.size() == 10) return ans;
             }
         }
 
@@ -152,11 +150,7 @@ void show_state(const st& state) {
     printf("order: %d\n", state.first);
     printf("{");
     for (int i = 0; i < char_size; i++) {
-        printf("{");
-        for (int j = 0; j < char_size; j++) {
-            printf("%d,", state.second[i][j]);
-        }
-        printf("},");
+        printf("%d,", state.second[i]);
     }
     printf("}\n");
 }
@@ -181,7 +175,7 @@ struct calc_cost {
     }
 
     const int dp_inf = 1 << 30;
-    void fill_coun(const vector<vector<int>>& weight) {
+    void fill_coun(const vector<int>& weight) {
         for (int al = 0; al < char_size; al++) {
             vector<vector<int>> dp(char_size + 1, vector<int>(max_t, dp_inf));
             dp[0][0] = 0;
@@ -190,17 +184,16 @@ struct calc_cost {
                     dp[j + 1][i] = dp[j][i];
                 }
                 for (int i = s_count[j]; i < max_t; i++) {
-                    dp[j + 1][i] = min(dp[j][i], dp[j + 1][i - s_count[j]] |
-                                                     (1 << weight[al][j]));
+                    dp[j + 1][i] = min(
+                        dp[j][i], dp[j + 1][i - s_count[j]] | (1 << weight[j]));
                 }
             }
 
             int i = t_count[al];
             for (int j = char_size - 1; j >= 0; j--) {
                 while (true) {
-                    if (i >= s_count[j] &&
-                        (dp[j + 1][i - s_count[j]] | (1 << weight[al][j])) ==
-                            dp[j + 1][i]) {
+                    if (i >= s_count[j] && (dp[j + 1][i - s_count[j]] |
+                                            (1 << weight[j])) == dp[j + 1][i]) {
                         coun[j][al]++;
                         i -= s_count[j];
                     } else {
@@ -298,7 +291,7 @@ struct calc_cost {
 
     ll get_cost(const st& state, string s) {
         int order_int;
-        vector<vector<int>> weight;
+        vector<int> weight;
         tie(order_int, weight) = state;
         real_cost = 0;
         coun = vector<vector<int>>(char_size, vector<int>(char_size, 0));
@@ -396,18 +389,12 @@ struct calc_cost {
 };
 
 st random_near(st state) {
-    state.first = state.first ^ (1 << range_random(char_size));
-    state.first = state.first ^ (1 << range_random(char_size));
+    for (int i = 0; i < 2; i++) {
+        state.first = state.first ^ (1 << range_random(char_size));
 
-    for (int i = 0; i < char_size; i++) {
         int j = range_random(char_size);
-        state.second[i][j] = min(
-            char_size - 1, max(0, state.second[i][j] + range_random(-10, 10)));
-    }
-    for (int i = 0; i < char_size; i++) {
-        int j = range_random(char_size);
-        state.second[i][j] = min(
-            char_size - 1, max(0, state.second[i][j] + range_random(-10, 10)));
+        state.second[j] =
+            min(char_size - 1, max(0, state.second[j] + range_random(-10, 10)));
     }
 
     return state;
@@ -455,9 +442,8 @@ int main() {
     max_t++;
 
     auto test_calc = calc_cost();
-    ll test_cost = test_calc.get_cost(
-        make_pair(0, vector<vector<int>>(char_size, vector<int>(char_size, 0))),
-        s);
+    ll test_cost =
+        test_calc.get_cost(make_pair(0, vector<int>(char_size, 0)), s);
 
     vector<calc_cost> cost_calculator(replica);
     vector<double> temp(replica);
@@ -465,11 +451,12 @@ int main() {
         temp[i] = min_temp + (max_temp * (test_cost / 2500000) - min_temp) *
                                  (double)i / (double)(replica - 1);
     }
-    int use_s_int = get_min_s();
+    vector<int> use_s_int = get_min_s();
 
     vector<st> state(replica);
     for (int i = 0; i < replica; i++) {
-        state[i] = state_from_min_s(use_s_int);
+        // state[i] = state_from_min_s(use_s_int);
+        state[i] = state_from_min_s(use_s_int[range_random(use_s_int.size())]);
     }
 
     for (int ep = 0; ep < epoch; ep++) {
